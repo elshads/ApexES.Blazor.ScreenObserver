@@ -1,11 +1,11 @@
-﻿# Blazor.Extensions.ScreenObserver
+﻿# ApexES.Blazor.ScreenObserver
 
 An open-source Blazor library that efficiently tracks viewport and DOM element dimensions in real-time using JSInterop. Simplifies creating adaptive layouts by providing a clean C# API to monitor both screen size changes and element dimension variations for responsive UIs.
 
 ## Installation
 
 ```csharp
-dotnet add package Blazor.Extensions.ScreenObserver
+dotnet add package ApexES.Blazor.ScreenObserver
 ```
 
 ## Setup
@@ -21,7 +21,7 @@ Add the JavaScript file to your project. You can do this by adding the following
 ```html
 <body>
     @* ... *@
-    <script src="_content/Blazor.Extensions.ScreenObserver/screenObserver.js"></script>
+    <script src="_content/ApexES.Blazor.ScreenObserver/screenObserver.js"></script>
 </body>
 ```
 
