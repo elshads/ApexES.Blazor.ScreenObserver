@@ -27,7 +27,7 @@
             }
 
             debounceTimer = setTimeout(() => {
-                dotNetReference.invokeMethodAsync('OnElementResized', elementId, width);
+                dotNetReference.invokeMethodAsync('OnElementResized', elementId, parseInt(width, 10));
             }, debounceInterval);
         });
 
@@ -39,7 +39,7 @@
         };
 
         // Return initial width
-        return Math.floor(element.offsetWidth);
+        return parseInt(Math.floor(element.offsetWidth), 10);
     },
 
     observeScreenSize: function (dotNetReference) {
@@ -61,7 +61,7 @@
             }
 
             debounceTimer = setTimeout(() => {
-                dotNetReference.invokeMethodAsync('OnScreenResized', width);
+                dotNetReference.invokeMethodAsync('OnScreenResized', parseInt(width, 10));
             }, debounceInterval);
         });
 
@@ -73,7 +73,7 @@
         };
 
         // Return initial width
-        return Math.floor(document.body.offsetWidth);
+        return parseInt(Math.floor(document.body.offsetWidth), 10);
     },
 
     stopObserving: function (elementId) {

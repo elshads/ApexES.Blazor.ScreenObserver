@@ -1,6 +1,6 @@
 ﻿# ApexES.Blazor.ScreenObserver
 
-An open-source Blazor library that efficiently tracks viewport and DOM element dimensions in real-time using JSInterop. Simplifies creating adaptive layouts by providing a clean C# API to monitor both screen size changes and element dimension variations for responsive UIs.
+An open-source Blazor library that returns the width of screen or any other html element.
 
 ## Installation
 
@@ -12,7 +12,7 @@ dotnet add package ApexES.Blazor.ScreenObserver
 
 Register the service in your `Program.cs` file:
 ```csharp
-using Blazor.Extentions.ScreenObserver
+using ApexES.Blazor.ScreenObserver;
 //...
 builder.Services.AddScreenObserver();
 ```
@@ -29,7 +29,7 @@ Add the JavaScript file to your project. You can do this by adding the following
 
 ```csharp
 @implements IAsyncDisposable
-@using Blazor.Extentions.ScreenObserver
+@using ApexES.Blazor.ScreenObserver
 @inject IBrowserScreenService ScreenService
 
 
