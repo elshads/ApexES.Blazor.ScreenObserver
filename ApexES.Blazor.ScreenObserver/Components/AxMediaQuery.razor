@@ -1,0 +1,112 @@
+﻿@implements IAsyncDisposable
+
+
+@if (_isVisible && ChildContent != null)
+{
+    @ChildContent(_width)
+}
+
+
+@code {
+    [Parameter]
+    public RenderFragment<int>? ChildContent { get; set; }
+
+    [Parameter]
+    public string? ElementId { get; set; }
+
+    [Parameter]
+    public int? MinWidth { get; set; }
+
+    [Parameter]
+    public int? MaxWidth { get; set; }
+
+    [Parameter]
+    public EventCallback<int> WidthChanged { get; set; }
+
+    bool _isBrowser = OperatingSystem.IsBrowser();
+    bool _isVisible;
+    bool _initialized;
+    int _width;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_isBrowser && string.IsNullOrEmpty(ElementId))
+        {
+            await InitializeAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && (!_isBrowser || !string.IsNullOrEmpty(ElementId)) && !_initialized)
+        {
+            _initialized = true;
+            await InitializeAsync();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        _isVisible = (MinWidth == null || _width >= MinWidth) && (MaxWidth == null || _width <= MaxWidth);
+    }
+
+    async Task InitializeAsync()
+    {
+        var width = 0;
+        if (string.IsNullOrEmpty(ElementId))
+        {
+            width = await BrowserScreenService.ObserveScreen();
+            BrowserScreenService.ScreenWidthChanged += OnScreenWidthChanged;
+        }
+        else
+        {
+            width = await BrowserScreenService.ObserveElement(ElementId, OnElementWidthChanged);
+        }
+
+        await HandleWidthChanged(width);
+    }
+
+    async void OnScreenWidthChanged(object? sender, int width)
+    {
+        try
+        {
+            await HandleWidthChanged(width);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    async void OnElementWidthChanged(int width)
+    {
+        try
+        {
+            await HandleWidthChanged(width);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    async Task HandleWidthChanged(int width)
+    {
+        _width = width;
+        _isVisible = (MinWidth == null || _width >= MinWidth) && (MaxWidth == null || _width <= MaxWidth);
+        await WidthChanged.InvokeAsync(_width);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (string.IsNullOrEmpty(ElementId))
+        {
+            BrowserScreenService.ScreenWidthChanged -= OnScreenWidthChanged;
+        }
+        else
+        {
+            await BrowserScreenService.StopObservingElement(ElementId, OnElementWidthChanged);
+        }
+    }
+}

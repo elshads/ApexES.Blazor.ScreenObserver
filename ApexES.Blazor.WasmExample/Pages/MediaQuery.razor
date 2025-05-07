@@ -1,0 +1,65 @@
+﻿@page "/mediaquery"
+
+
+<div id="testId" style="border:1px solid red; padding:1rem;">
+    <AxMediaQuery ElementId="testId">
+        <div>Element width: @context</div>
+    </AxMediaQuery>
+</div>
+
+
+<AxMediaQuery MaxWidth="540">
+    <div>Screen width XS: @context</div>
+</AxMediaQuery>
+
+<AxMediaQuery MinWidth="541" MaxWidth="780">
+    <div>Screen width SM: @context</div>
+</AxMediaQuery>
+
+<AxMediaQuery MinWidth="781" MaxWidth="968">
+    <div>Screen width MD: @context</div>
+</AxMediaQuery>
+
+<AxMediaQuery MinWidth="969" MaxWidth="1200">
+    <div>Screen width LG: @context</div>
+</AxMediaQuery>
+
+<AxMediaQuery MinWidth="1201">
+    <div>Screen width XL: @context</div>
+</AxMediaQuery>
+
+<AxMediaQuery>
+    @if (context > 1200)
+    {
+    <div>XL result: @context</div>
+    }
+    else if (context > 968)
+    {
+        <div>LG result: @context</div>
+    }
+    else if (context > 780)
+    {
+        <div>MD result: @context</div>
+    }
+    else if (context > 540)
+    {
+        <div>SM result: @context</div>
+    }
+    else
+    {
+        <div>XS result: @context</div>
+    }
+</AxMediaQuery>
+
+<AxMediaQuery WidthChanged="OnWidthChanged" />
+<div>Width changed: @_width</div>
+
+
+@code {
+    int _width;
+
+    void OnWidthChanged(int width)
+    {
+        _width = width;
+    }
+}

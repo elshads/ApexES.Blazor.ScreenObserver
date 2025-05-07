@@ -1,110 +1,101 @@
 ﻿window.browserScreenService = {
-    observers: {}, // Store multiple observers
-    screenObserver: null, // Special observer for screen size
+    observers: {},
+    screenWidth: 0,
+    hasScreenObserver: false,
+    debounceTimer: null,
+    debounceInterval: 250,
 
     observeElement: function (dotNetReference, elementId) {
-        // Check if we're already observing this element
-        if (this.observers[elementId]) {
-            return Math.floor(document.getElementById(elementId)?.offsetWidth || 0);
-        }
-
         const element = document.getElementById(elementId);
         if (!element) {
             console.warn(`Element with ID '${elementId}' not found.`);
             return 0;
         }
 
-        // Debounce setup for this specific element
-        let debounceTimer = null;
-        const debounceInterval = 250;
+        if (!this.observers[elementId]) {
+            const resizeObserver = new ResizeObserver(entries => {
+                const width = Math.floor(entries[0].target.offsetWidth);
 
-        // Create a new observer for this element
-        const resizeObserver = new ResizeObserver(entries => {
-            const width = Math.floor(entries[0].target.offsetWidth);
+                if (this.observers[elementId].debounceTimer) {
+                    clearTimeout(this.observers[elementId].debounceTimer);
+                }
 
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
-            }
+                this.observers[elementId].debounceTimer = setTimeout(() => {
+                    dotNetReference.invokeMethodAsync('OnElementWidthChanged', elementId, parseInt(width, 10));
+                }, this.debounceInterval);
+            });
 
-            debounceTimer = setTimeout(() => {
-                dotNetReference.invokeMethodAsync('OnElementResized', elementId, parseInt(width, 10));
-            }, debounceInterval);
-        });
+            resizeObserver.observe(element);
 
-        // Start observing and store the observer
-        resizeObserver.observe(element);
-        this.observers[elementId] = {
-            observer: resizeObserver,
-            debounceTimer: debounceTimer
-        };
-
-        // Return initial width
+            this.observers[elementId] = {
+                observer: resizeObserver,
+                dotNetReference: dotNetReference,
+                debounceTimer: null
+            };
+        } else {
+            this.observers[elementId].dotNetReference = dotNetReference;
+        }
+        
         return parseInt(Math.floor(element.offsetWidth), 10);
     },
 
-    observeScreenSize: function (dotNetReference) {
-        // Check if we're already observing screen size
-        if (this.screenObserver) {
-            return Math.floor(document.body.offsetWidth);
+    observeScreen: function (dotNetReference) {
+        if (!this.hasScreenObserver) {
+            const resizeObserver = new ResizeObserver(entries => {
+                const width = Math.floor(document.body.offsetWidth);
+                this.screenWidth = width;
+
+                if (this.debounceTimer) {
+                    clearTimeout(this.debounceTimer);
+                }
+
+                this.debounceTimer = setTimeout(() => {
+                    dotNetReference.invokeMethodAsync('OnScreenWidthChanged', parseInt(width, 10));
+                }, this.debounceInterval);
+            });
+
+            resizeObserver.observe(document.body);
+            this._screenResizeObserver = resizeObserver;
+            this.hasScreenObserver = true;
         }
 
-        // Debounce setup for screen
-        let debounceTimer = null;
-        const debounceInterval = 250;
-
-        // Create a new observer for document.body
-        const resizeObserver = new ResizeObserver(entries => {
-            const width = Math.floor(document.body.offsetWidth);
-
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
-            }
-
-            debounceTimer = setTimeout(() => {
-                dotNetReference.invokeMethodAsync('OnScreenResized', parseInt(width, 10));
-            }, debounceInterval);
-        });
-
-        // Start observing and store the observer
-        resizeObserver.observe(document.body);
-        this.screenObserver = {
-            observer: resizeObserver,
-            debounceTimer: debounceTimer
-        };
-
-        // Return initial width
-        return parseInt(Math.floor(document.body.offsetWidth), 10);
+        return parseInt(Math.floor(this.screenWidth || document.body.offsetWidth), 10);
     },
 
-    stopObserving: function (elementId) {
-        const observerData = this.observers[elementId];
-        if (observerData) {
-            observerData.observer.disconnect();
-            if (observerData.debounceTimer) {
-                clearTimeout(observerData.debounceTimer);
+    stopObservingElement: function (elementId) {
+        if (this.observers[elementId]) {
+            this.observers[elementId].observer.disconnect();
+            if (this.observers[elementId].debounceTimer) {
+                clearTimeout(this.observers[elementId].debounceTimer);
             }
             delete this.observers[elementId];
         }
     },
 
     stopObservingScreen: function () {
-        if (this.screenObserver) {
-            this.screenObserver.observer.disconnect();
-            if (this.screenObserver.debounceTimer) {
-                clearTimeout(this.screenObserver.debounceTimer);
-            }
-            this.screenObserver = null;
+        if (this._screenResizeObserver) {
+            this._screenResizeObserver.disconnect();
+            this._screenResizeObserver = null;
+            this.hasScreenObserver = false;
+        }
+
+        if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = null;
         }
     },
 
     dispose: function () {
-        // Clean up all observers
         Object.keys(this.observers).forEach(elementId => {
-            this.stopObserving(elementId);
+            if (this.observers[elementId]) {
+                this.observers[elementId].observer.disconnect();
+                if (this.observers[elementId].debounceTimer) {
+                    clearTimeout(this.observers[elementId].debounceTimer);
+                }
+            }
         });
         this.observers = {};
 
-        // Clean up screen observer
         this.stopObservingScreen();
     }
 };

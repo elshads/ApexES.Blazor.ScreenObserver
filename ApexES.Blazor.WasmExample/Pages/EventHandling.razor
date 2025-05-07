@@ -1,0 +1,91 @@
+﻿@implements IAsyncDisposable
+@inject IBrowserScreenService BrowserScreenService
+
+@page "/eventhandling"
+
+<div id="redElement" class="red-element">
+    <div id="blueElement" class="blue-element">
+        @_blueElementWidth
+    </div>
+    @_redElementWidth (Max-Width: 1024px)
+</div>
+
+<ul>
+    <li>Screen Width: @(_screenWidth)</li>
+    <li>Red Element Width: @(_redElementWidth)</li>
+    <li>Blue Element Width: @(_blueElementWidth)</li>
+</ul>
+
+<div>Or get the current width directly from the service: @BrowserScreenService.CurrentScreenWidth</div>
+
+@code {
+    int _screenWidth;
+    int _redElementWidth;
+    int _blueElementWidth;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Initialize the screen width and element widths
+            // Subscribe to screen width changes
+            _screenWidth = await BrowserScreenService.ObserveScreen();
+            BrowserScreenService.ScreenWidthChanged += OnScreenChanged;
+
+            // Initialize and Subscribe to element width changes
+            _redElementWidth = await BrowserScreenService.ObserveElement("redElement", OnRedElementChanged);
+            _blueElementWidth = await BrowserScreenService.ObserveElement("blueElement", OnBlueElementChanged);
+
+            StateHasChanged();
+        }
+    }
+
+    void OnScreenChanged(object? sender, int width)
+    {
+        _screenWidth = width;
+        StateHasChanged();
+    }
+
+    void OnRedElementChanged(int width)
+    {
+        _redElementWidth = width;
+        StateHasChanged();
+    }
+
+    void OnBlueElementChanged(int width)
+    {
+        _blueElementWidth = width;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Unsubscribe from screen width changes when the component is disposed
+        BrowserScreenService.ScreenWidthChanged -= OnScreenChanged;
+
+        // Unsubscribe from element changes when the component is disposed
+        await BrowserScreenService.StopObservingElement("redElement", OnRedElementChanged);
+        await BrowserScreenService.StopObservingElement("blueElement", OnBlueElementChanged);
+    }
+}
+
+
+<style>
+    .red-element {
+        display: flex;
+        align-items: center;
+        max-width: 1024px;
+        width: 100%;
+        padding: 16px;
+        color: white;
+        background-color: red;
+    }
+
+    .blue-element {
+        width: 50%;
+        padding: 16px;
+        margin-right: 16px;
+        color: white;
+        background-color: blue;
+    }
+</style>

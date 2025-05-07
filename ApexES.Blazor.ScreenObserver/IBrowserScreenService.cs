@@ -2,11 +2,12 @@
 
 public interface IBrowserScreenService
 {
+    int CurrentScreenWidth { get; }
+    event EventHandler<int>? ScreenWidthChanged;
     Task<int> ObserveElement(string elementId, Action<int> callback);
-    Task<int> ObserveScreenSize(Action<int> callback);
+    Task<int> ObserveScreen();
     Task StopObservingElement(string elementId, Action<int> callback);
-    Task StopObservingScreen(Action<int> callback);
-    void OnElementResized(string elementId, int width);
-    void OnScreenResized(int width);
+    void OnElementWidthChanged(string elementId, int width);
+    void OnScreenWidthChanged(int width);
     ValueTask DisposeAsync();
 }
